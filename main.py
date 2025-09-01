@@ -111,7 +111,7 @@ async def get_client_page(request: Request):
 def execute_mouse_event(mouse_data):
     """Execute actual mouse actions with proper coordinate mapping"""
 
-     if pyautogui is None:
+    if pyautogui is None:
         logger.info("🖱️ Mouse event simulated (headless mode)")
         return True
     try:
