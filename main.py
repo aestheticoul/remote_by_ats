@@ -19,13 +19,20 @@ from screen_capture import screen_capture
 from models import WebRTCMessage, MessageType, MouseEvent, KeyboardEvent
 from config import settings
 
-# Configure pyautogui with error handling for headless servers
+# ✅ FIX: Handle pyautogui for headless environment
+pyautogui = None
 try:
+    # Set display for headless environment
+    if os.getenv('ENVIRONMENT') == 'production':
+        os.environ['DISPLAY'] = ':99'  # Virtual display
+    
     import pyautogui
     pyautogui.FAILSAFE = False
     pyautogui.PAUSE = 0.01
+    logger.info("✅ PyAutoGUI loaded successfully")
 except Exception as e:
-    logger.warning(f"PyAutoGUI not available in this environment: {e}")
+    logger.warning(f"⚠️ PyAutoGUI not available: {e}")
+    logger.info("Running in headless mode - mouse/keyboard control disabled")
     pyautogui = None
 
 app = FastAPI(
@@ -42,6 +49,7 @@ app.add_middleware(
     TrustedHostMiddleware, 
     allowed_hosts=["*.onrender.com", "localhost", "127.0.0.1"]
 )
+
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
@@ -51,16 +59,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-# Configure pyautogui for better control
-pyautogui.FAILSAFE = False  # Disable fail-safe
-pyautogui.PAUSE = 0.01      # Reduce delay between actions
 
 app = FastAPI(title="Remote Desktop WebApp - AnyDesk Clone")
 
