@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Desktop - Host</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        header h1 {
+            color: white;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .connection-status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            color: white;
+            background: #e74c3c;
+        }
+
+        .connection-status.connected {
+            background: #27ae60;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            height: fit-content;
+        }
+
+        .host-section, .connected-clients {
+            margin-bottom: 30px;
+            padding-bottom: 25px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .host-section:last-child, .connected-clients:last-child {
+            border-bottom: none;
+        }
+
+        h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #95a5a6, #7f8c8d);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+        }
+
+        .btn-success {
+            background: linear-gradient(45deg, #27ae60, #229954);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .session-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 15px;
+            border-left: 4px solid #3498db;
+        }
+
+        .session-info p {
+            margin: 8px 0;
+            font-size: 16px;
+        }
+
+        .session-info strong {
+            color: #2c3e50;
+        }
+
+        .session-id-display {
+            font-size: 24px;
+            font-weight: bold;
+            color: #e74c3c;
+            background: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            text-align: center;
+            margin: 10px 0;
+            border: 2px dashed #3498db;
+        }
+
+        .screen-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .screen-area {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .screen-area h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .connection-message {
+            padding: 40px;
+            color: #7f8c8d;
+            font-style: italic;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 2px dashed #ddd;
+        }
+
+        canvas {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            max-width: 100%;
+            height: auto;
+            background: #000;
+        }
+
+        .clients-list {
+            background: #e8f5e8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .client-item {
+            background: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 5px 0;
+            border-left: 3px solid #27ae60;
+        }
+
+        .sharing-status {
+            background: #fff3cd;
+            color: #856404;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #ffc107;
+        }
+
+        .sharing-status.active {
+            background: #d4edda;
+            color: #155724;
+            border-left-color: #28a745;
+        }
+
+        .error-message {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #c62828;
+        }
+
+        .success-message {
+            background: #e8f5e8;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border-left: 4px solid #2e7d32;
+        }
+
+        /* Connection Request Modal */
+        .connection-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .connection-modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            min-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            text-align: center;
+        }
+
+        .connection-modal h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .connection-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .connection-info p {
+            margin: 5px 0;
+            color: #555;
+        }
+
+        .modal-buttons {
+            margin-top: 25px;
+        }
+
+        .modal-buttons button {
+            margin: 0 10px;
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-approve {
+            background: linear-gradient(45deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .btn-approve:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.4);
+        }
+
+        .btn-reject {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .btn-reject:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            canvas {
+                width: 100%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🖥️ Remote Desktop - Host</h1>
+            <div class="connection-status" id="connectionStatus">Disconnected</div>
+        </header>
+
+        <div class="main-content">
+            <div class="control-panel">
+                <div class="host-section">
+                    <h3>Share Your Screen</h3>
+                    <button id="createSessionBtn" class="btn btn-primary">Create Session</button>
+                    
+                    <div id="sessionInfo" class="session-info" style="display: none;">
+                        <p><strong>Session ID:</strong></p>
+                        <div class="session-id-display" id="sessionId"></div>
+                        <p><strong>Password:</strong> <span id="sessionPassword">Not set</span></p>
+                        
+                        <button id="copySessionBtn" class="btn btn-secondary">📋 Copy Session ID</button>
+                        <button id="setPasswordBtn" class="btn btn-secondary">🔒 Set Password</button>
+                        <br><br>
+                        <button id="startSharingBtn" class="btn btn-success">▶️ Start Sharing</button>
+                        <button id="stopSharingBtn" class="btn btn-danger" style="display: none;">⏹️ Stop Sharing</button>
+                        
+                        <div id="sharingStatus" class="sharing-status">
+                            Ready to share. Click "Start Sharing" to begin.
+                        </div>
+                    </div>
+                    
+                    <div id="messageArea"></div>
+                </div>
+
+                <div class="connected-clients" id="connectedClients" style="display: none;">
+                    <h3>Connected Clients</h3>
+                    <div id="clientsList" class="clients-list">
+                        No clients connected
+                    </div>
+                </div>
+            </div>
+
+            <div class="screen-container">
+                <div id="localScreen" class="screen-area">
+                    <h4>Your Screen Preview</h4>
+                    <div id="sharingMessage" class="connection-message">
+                        Click "Create Session" to start hosting
+                    </div>
+                    <canvas id="localCanvas" width="800" height="600" style="display: none;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="passwordModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 30px; border-radius: 10px; min-width: 300px;">
+            <h3>Set Session Password</h3>
+            <input type="password" id="newPasswordInput" placeholder="Enter password (optional)" class="input-field" style="width: 100%; padding: 12px; margin: 10px 0; border: 2px solid #ddd; border-radius: 8px;">
+            <div style="margin-top: 15px;">
+                <button id="savePasswordBtn" class="btn btn-primary">Save</button>
+                <button id="cancelPasswordBtn" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Connection Request Modal -->
+    <div class="connection-modal" id="connectionRequestModal">
+        <div class="connection-modal-content">
+            <h3>🔔 Connection Request</h3>
+            <p>A client wants to connect to your session:</p>
+            
+            <div class="connection-info" id="connectionInfo">
+                <p><strong>Session ID:</strong> <span id="modalSessionId">-</span></p>
+                <p><strong>Request Time:</strong> <span id="modalRequestTime">-</span></p>
+                <p><strong>Client Info:</strong> <span id="modalClientInfo">Remote Client</span></p>
+            </div>
+            
+            <p style="margin: 20px 0; color: #7f8c8d;">
+                Do you want to allow this client to control your computer?
+            </p>
+            
+            <div class="modal-buttons">
+                <button class="btn-approve" id="approveConnectionBtn">
+                    ✅ Accept Connection
+                </button>
+                <button class="btn-reject" id="rejectConnectionBtn">
+                    ❌ Reject Connection
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class RemoteDesktopHost {
+            constructor() {
+                this.ws = null;
+                this.connectionId = null;
+                this.sessionId = null;
+                this.isConnected = false;
+                this.isSharing = false;
+                this.connectedClients = new Set();
+                this.localCanvas = document.getElementById('localCanvas');
+                this.localCtx = this.localCanvas.getContext('2d');
+                this.currentPendingRequest = null;
+                this.requestTimeout = null;
+                
+                this.initializeEventListeners();
+                this.connectWebSocket();
+            }
+
+            initializeEventListeners() {
+                // Button event listeners with debugging
+                const createBtn = document.getElementById('createSessionBtn');
+                const startBtn = document.getElementById('startSharingBtn');
+                const stopBtn = document.getElementById('stopSharingBtn');
+                
+                console.log('🔧 Initializing event listeners...');
+                console.log('Create button:', createBtn);
+                console.log('Start button:', startBtn);
+                console.log('Stop button:', stopBtn);
+
+                if (createBtn) {
+                    createBtn.addEventListener('click', () => {
+                        console.log('🎯 Create Session clicked');
+                        this.createSession();
+                    });
+                }
+
+                if (startBtn) {
+                    startBtn.addEventListener('click', () => {
+                        console.log('🎯 Start Sharing clicked');
+                        this.startScreenSharing();
+                    });
+                } else {
+                    console.error('❌ Start Sharing button not found!');
+                }
+
+                if (stopBtn) {
+                    stopBtn.addEventListener('click', () => {
+                        console.log('🎯 Stop Sharing clicked');
+                        this.stopScreenSharing();
+                    });
+                }
+
+                // Other event listeners
+                const copyBtn = document.getElementById('copySessionBtn');
+                if (copyBtn) {
+                    copyBtn.addEventListener('click', () => this.copySessionId());
+                }
+
+                const setPasswordBtn = document.getElementById('setPasswordBtn');
+                if (setPasswordBtn) {
+                    setPasswordBtn.addEventListener('click', () => this.showPasswordModal());
+                }
+
+                const savePasswordBtn = document.getElementById('savePasswordBtn');
+                if (savePasswordBtn) {
+                    savePasswordBtn.addEventListener('click', () => this.savePassword());
+                }
+
+                const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
+                if (cancelPasswordBtn) {
+                    cancelPasswordBtn.addEventListener('click', () => this.hidePasswordModal());
+                }
+
+                // Connection approval buttons
+                const approveBtn = document.getElementById('approveConnectionBtn');
+                if (approveBtn) {
+                    approveBtn.addEventListener('click', () => this.approveConnection());
+                }
+
+                const rejectBtn = document.getElementById('rejectConnectionBtn');
+                if (rejectBtn) {
+                    rejectBtn.addEventListener('click', () => this.rejectConnection());
+                }
+
+                // Enter key in password input
+                const passwordInput = document.getElementById('newPasswordInput');
+                if (passwordInput) {
+                    passwordInput.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            this.savePassword();
+                        }
+                    });
+                }
+
+                console.log('✅ Event listeners initialized');
+            }
+
+            connectWebSocket() {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/ws`;
+                
+                console.log('🔗 Connecting to WebSocket:', wsUrl);
+                this.ws = new WebSocket(wsUrl);
+
+                this.ws.onopen = () => {
+                    console.log('✅ WebSocket connected successfully');
+                    this.updateConnectionStatus(true, 'Connected to server');
+                };
+
+                this.ws.onmessage = (event) => {
+                    const message = JSON.parse(event.data);
+                    if (message.type !== 'screen_frame') {
+                        console.log('📨 Received message:', message.type, message);
+                    }
+                    this.handleMessage(message);
+                };
+
+                this.ws.onclose = () => {
+                    console.log('🔌 WebSocket disconnected');
+                    this.updateConnectionStatus(false, 'Disconnected from server');
+                    this.isSharing = false;
+                    this.updateSharingStatus();
+                    setTimeout(() => this.connectWebSocket(), 3000);
+                };
+
+                this.ws.onerror = (error) => {
+                    console.error('❌ WebSocket error:', error);
+                    this.showMessage('Connection error occurred', 'error');
+                };
+            }
+
+            updateConnectionStatus(connected, message = '') {
+                this.isConnected = connected;
+                const statusElement = document.getElementById('connectionStatus');
+                if (statusElement) {
+                    statusElement.textContent = connected ? 'Connected' : 'Disconnected';
+                    statusElement.className = `connection-status ${connected ? 'connected' : ''}`;
+                }
+                
+                if (message) {
+                    this.showMessage(message, connected ? 'success' : 'error');
+                }
+            }
+
+            showMessage(text, type = 'info') {
+                const messageArea = document.getElementById('messageArea');
+                if (!messageArea) return;
+                
+                const messageDiv = document.createElement('div');
+                messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+                messageDiv.textContent = text;
+                
+                messageArea.innerHTML = '';
+                messageArea.appendChild(messageDiv);
+                
+                setTimeout(() => {
+                    if (messageArea.contains(messageDiv)) {
+                        messageArea.removeChild(messageDiv);
+                    }
+                }, 5000);
+            }
+
+            sendMessage(message) {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    console.log('📤 Sending message:', message.type, message.data);
+                    this.ws.send(JSON.stringify(message));
+                    return true;
+                } else {
+                    console.error('❌ WebSocket not connected');
+                    this.showMessage('Not connected to server', 'error');
+                    return false;
+                }
+            }
+
+            createSession() {
+                console.log('🚀 Creating session...');
+                const message = {
+                    type: 'connection_request',
+                    data: {
+                        action: 'create_session'
+                    }
+                };
+                
+                if (this.sendMessage(message)) {
+                    this.showMessage('Creating session...', 'info');
+                }
+            }
+
+            startScreenSharing() {
+                console.log('🚀 Starting screen sharing...');
+                
+                if (!this.sessionId) {
+                    console.error('❌ No session ID available');
+                    this.showMessage('Please create a session first', 'error');
+                    return;
+                }
+
+                if (!this.isConnected) {
+                    console.error('❌ WebSocket not connected');
+                    this.showMessage('Not connected to server', 'error');
+                    return;
+                }
+
+                const message = {
+                    type: 'screen_share',
+                    data: {
+                        action: 'start',
+                        quality: 'medium',
+                        fps: 15
+                    }
+                };
+                
+                console.log('📤 Sending screen share message:', message);
+                
+                if (this.sendMessage(message)) {
+                    this.showMessage('Starting screen sharing...', 'info');
+                    // Update UI immediately for better UX
+                    const startBtn = document.getElementById('startSharingBtn');
+                    const stopBtn = document.getElementById('stopSharingBtn');
+                    if (startBtn) startBtn.style.display = 'none';
+                    if (stopBtn) stopBtn.style.display = 'inline-block';
+                }
+            }
+
+            stopScreenSharing() {
+                console.log('🛑 Stopping screen sharing...');
+                
+                const message = {
+                    type: 'screen_share',
+                    data: {
+                        action: 'stop'
+                    }
+                };
+                
+                if (this.sendMessage(message)) {
+                    this.showMessage('Stopping screen sharing...', 'info');
+                }
+            }
+
+            copySessionId() {
+                if (this.sessionId) {
+                    navigator.clipboard.writeText(this.sessionId).then(() => {
+                        this.showMessage('📋 Session ID copied to clipboard!', 'success');
+                    }).catch(() => {
+                        const textArea = document.createElement('textarea');
+                        textArea.value = this.sessionId;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textArea);
+                        this.showMessage('📋 Session ID copied to clipboard!', 'success');
+                    });
+                }
+            }
+
+            showPasswordModal() {
+                const modal = document.getElementById('passwordModal');
+                const input = document.getElementById('newPasswordInput');
+                if (modal) modal.style.display = 'block';
+                if (input) input.focus();
+            }
+
+            hidePasswordModal() {
+                const modal = document.getElementById('passwordModal');
+                const input = document.getElementById('newPasswordInput');
+                if (modal) modal.style.display = 'none';
+                if (input) input.value = '';
+            }
+
+            savePassword() {
+                const input = document.getElementById('newPasswordInput');
+                const password = input ? input.value.trim() : '';
+                
+                const message = {
+                    type: 'connection_request',
+                    data: {
+                        action: 'set_password',
+                        session_id: this.sessionId,
+                        password: password || null
+                    }
+                };
+                this.sendMessage(message);
+                this.hidePasswordModal();
+            }
+
+            showConnectionRequestModal(requestData) {
+                this.currentPendingRequest = requestData;
+                
+                // Update modal content
+                const sessionIdSpan = document.getElementById('modalSessionId');
+                const timeSpan = document.getElementById('modalRequestTime');
+                const clientInfoSpan = document.getElementById('modalClientInfo');
+                const modal = document.getElementById('connectionRequestModal');
+                
+                if (sessionIdSpan) sessionIdSpan.textContent = requestData.session_id;
+                if (timeSpan) timeSpan.textContent = new Date().toLocaleTimeString();
+                if (clientInfoSpan) clientInfoSpan.textContent = requestData.client_info?.user_agent || 'Remote Client';
+                if (modal) modal.style.display = 'block';
+                
+                // Auto-reject after 30 seconds
+                this.requestTimeout = setTimeout(() => {
+                    this.rejectConnection('Connection request timed out');
+                }, 30000);
+                
+                this.showMessage('🔔 New connection request received!', 'info');
+                this.playNotificationSound();
+            }
+
+            approveConnection() {
+                if (!this.currentPendingRequest) return;
+                
+                const message = {
+                    type: 'connection_approve',
+                    data: {
+                        pending_id: this.currentPendingRequest.pending_id,
+                        session_id: this.currentPendingRequest.session_id
+                    }
+                };
+                
+                this.sendMessage(message);
+                this.hideConnectionRequestModal();
+                this.showMessage('✅ Connection approved!', 'success');
+            }
+
+            rejectConnection(reason = 'Connection rejected by host') {
+                if (!this.currentPendingRequest) return;
+                
+                const message = {
+                    type: 'connection_reject',
+                    data: {
+                        pending_id: this.currentPendingRequest.pending_id,
+                        reason: reason
+                    }
+                };
+                
+                this.sendMessage(message);
+                this.hideConnectionRequestModal();
+                this.showMessage('❌ Connection rejected', 'info');
+            }
+
+            hideConnectionRequestModal() {
+                const modal = document.getElementById('connectionRequestModal');
+                if (modal) modal.style.display = 'none';
+                
+                if (this.requestTimeout) {
+                    clearTimeout(this.requestTimeout);
+                    this.requestTimeout = null;
+                }
+                
+                this.currentPendingRequest = null;
+            }
+
+            playNotificationSound() {
+                try {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+                    
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sine';
+                    gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                    
+                    oscillator.start(audioContext.currentTime);
+                    oscillator.stop(audioContext.currentTime + 0.2);
+                } catch (error) {
+                    console.log('Could not play notification sound:', error);
+                }
+            }
+
+            updateSharingStatus() {
+                const statusElement = document.getElementById('sharingStatus');
+                const startBtn = document.getElementById('startSharingBtn');
+                const stopBtn = document.getElementById('stopSharingBtn');
+                
+                if (statusElement) {
+                    if (this.isSharing) {
+                        statusElement.textContent = '🟢 Sharing screen - Clients can now see your desktop';
+                        statusElement.className = 'sharing-status active';
+                    } else {
+                        statusElement.textContent = this.sessionId ? 
+                            'Ready to share. Click "Start Sharing" to begin.' :
+                            'Create a session first';
+                        statusElement.className = 'sharing-status';
+                    }
+                }
+                
+                if (startBtn && stopBtn) {
+                    if (this.isSharing) {
+                        startBtn.style.display = 'none';
+                        stopBtn.style.display = 'inline-block';
+                    } else {
+                        startBtn.style.display = 'inline-block';
+                        stopBtn.style.display = 'none';
+                    }
+                }
+            }
+
+            updateClientsList() {
+                const clientsList = document.getElementById('clientsList');
+                const clientsSection = document.getElementById('connectedClients');
+                
+                if (!clientsList || !clientsSection) return;
+                
+                if (this.connectedClients.size === 0) {
+                    clientsList.innerHTML = 'No clients connected';
+                    clientsSection.style.display = 'none';
+                } else {
+                    clientsSection.style.display = 'block';
+                    clientsList.innerHTML = '';
+                    this.connectedClients.forEach(clientId => {
+                        const clientDiv = document.createElement('div');
+                        clientDiv.className = 'client-item';
+                        clientDiv.innerHTML = `
+                            <strong>Client:</strong> ${clientId.substring(0, 8)}...
+                            <br><small>Connected at ${new Date().toLocaleTimeString()}</small>
+                        `;
+                        clientsList.appendChild(clientDiv);
+                    });
+                }
+            }
+
+            handleMessage(message) {
+                switch (message.type) {
+                    case 'session_created':
+                        this.sessionId = message.data.session_id;
+                        console.log('✅ Session created:', this.sessionId);
+                        
+                        const sessionIdElement = document.getElementById('sessionId');
+                        const sessionInfoElement = document.getElementById('sessionInfo');
+                        const sharingMessageElement = document.getElementById('sharingMessage');
+                        
+                        if (sessionIdElement) sessionIdElement.textContent = this.sessionId;
+                        if (sessionInfoElement) sessionInfoElement.style.display = 'block';
+                        if (sharingMessageElement) sharingMessageElement.textContent = 'Session created! Share the Session ID with clients.';
+                        
+                        this.updateSharingStatus();
+                        this.showMessage(`Session created: ${this.sessionId}`, 'success');
+                        break;
+
+                    case 'connection_request_pending':
+                        console.log('🔔 Connection request received');
+                        this.showConnectionRequestModal(message.data);
+                        break;
+
+                    case 'client_connected':
+                        const clientId = message.data.client_id;
+                        this.connectedClients.add(clientId);
+                        this.updateClientsList();
+                        this.showMessage('✅ New client connected and approved!', 'success');
+                        break;
+
+                    case 'client_disconnected':
+                        const disconnectedId = message.data.client_id;
+                        this.connectedClients.delete(disconnectedId);
+                        this.updateClientsList();
+                        this.showMessage('Client disconnected', 'info');
+                        break;
+
+                    case 'sharing_started':
+                        this.isSharing = true;
+                        this.updateSharingStatus();
+                        
+                        const sharingMsg = document.getElementById('sharingMessage');
+                        const localCanvas = document.getElementById('localCanvas');
+                        if (sharingMsg) sharingMsg.style.display = 'none';
+                        if (localCanvas) localCanvas.style.display = 'block';
+                        
+                        this.showMessage('✅ Screen sharing started successfully!', 'success');
+                        console.log('✅ Screen sharing started');
+                        break;
+
+                    case 'sharing_stopped':
+                        this.isSharing = false;
+                        this.updateSharingStatus();
+                        this.showMessage('Screen sharing stopped', 'info');
+                        console.log('🛑 Screen sharing stopped');
+                        break;
+
+                    case 'password_updated':
+                        if (message.data.success) {
+                            const passwordDisplay = document.getElementById('sessionPassword');
+                            const newPassword = message.data.password;
+                            if (passwordDisplay) {
+                                passwordDisplay.textContent = newPassword ? '🔒 Protected' : 'Not set';
+                            }
+                            this.showMessage(newPassword ? 'Password set successfully' : 'Password removed', 'success');
+                        } else {
+                            this.showMessage('Failed to update password', 'error');
+                        }
+                        break;
+
+                    case 'screen_frame':
+                        this.displayScreenFrame(message.data);
+                        break;
+
+                    case 'connection_approval_failed':
+                        this.showMessage('❌ Failed to approve connection', 'error');
+                        this.hideConnectionRequestModal();
+                        break;
+
+                    default:
+                        console.log('❓ Unknown message type:', message.type);
+                }
+            }
+
+            displayScreenFrame(frameData) {
+                const imageData = typeof frameData === 'string' ? frameData : frameData.frame;
+                
+                if (!imageData) return;
+                
+                const img = new Image();
+                img.onload = () => {
+                    if (this.localCanvas && this.localCtx) {
+                        this.localCanvas.width = img.width;
+                        this.localCanvas.height = img.height;
+                        this.localCtx.drawImage(img, 0, 0);
+                    }
+                };
+                img.src = imageData;
+            }
+        }
+
+        // Initialize the application when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🚀 Remote Desktop Host initialized');
+            window.hostApp = new RemoteDesktopHost();
+        });
+    </script>
+</body>
+</html>

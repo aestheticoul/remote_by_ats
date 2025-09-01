@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Remote Desktop WebApp</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🖥️ Remote Desktop WebApp</h1>
+            <p>Connect to remote computers securely through your browser</p>
+        </header>
+
+        <div class="landing-options">
+            <div class="option-card">
+                <h2>🖥️ Host Computer</h2>
+                <p>Share your screen with others</p>
+                <ul>
+                    <li>Create secure sessions</li>
+                    <li>Control who can access</li>
+                    <li>Monitor connected users</li>
+                </ul>
+                <a href="/host" class="btn btn-primary">Start Hosting</a>
+            </div>
+
+            <div class="option-card">
+                <h2>📱 Connect to Remote</h2>
+                <p>Access another computer remotely</p>
+                <ul>
+                    <li>Control remote desktop</li>
+                    <li>Transfer files</li>
+                    <li>Full keyboard & mouse support</li>
+                </ul>
+                <a href="/client" class="btn btn-primary">Connect to Remote</a>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .landing-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-top: 40px;
+        }
+
+        .option-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .option-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .option-card h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .option-card p {
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+
+        .option-card ul {
+            text-align: left;
+            margin: 20px 0;
+            color: #555;
+        }
+
+        .option-card li {
+            margin: 8px 0;
+        }
+    </style>
+</body>
+</html>
