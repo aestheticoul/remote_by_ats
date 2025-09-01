@@ -110,6 +110,10 @@ async def get_client_page(request: Request):
 
 def execute_mouse_event(mouse_data):
     """Execute actual mouse actions with proper coordinate mapping"""
+
+     if pyautogui is None:
+        logger.info("🖱️ Mouse event simulated (headless mode)")
+        return True
     try:
         # Get coordinates from client
         canvas_x = int(mouse_data.get('x', 0))
@@ -182,6 +186,9 @@ def execute_mouse_event(mouse_data):
 
 def execute_keyboard_event(keyboard_data):
     """Execute actual keyboard actions on the host computer"""
+    if pyautogui is None:
+        logger.info("⌨️ Keyboard event simulated (headless mode)")
+        return True
     try:
         key = keyboard_data.get('key', '')
         action = keyboard_data.get('action', 'keydown')
